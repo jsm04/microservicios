@@ -1,7 +1,9 @@
 import { getSwaggerPage, getSwaggerSpec } from './views/swagger.view.js';
 import { HttpUserClient } from '../../contracts/http-user-client.js';
+import { ServiceError } from '../../contracts/service-error.js';
 import { OrderController } from './controllers/order.controller.js';
 import { Pool } from 'pg';
+import * as response from '../../libs/response.js';
 
 const db = new Pool({
 	connectionString: process.env.DATABASE_URL,
@@ -10,17 +12,22 @@ const db = new Pool({
 const userClient = new HttpUserClient();
 const controller = new OrderController(userClient);
 
+async function toResponse(result: Promise<Response | ServiceError>): Promise<Response> {
+	const value = await result;
+	return value instanceof ServiceError ? response.error(value) : value;
+}
+
 const server = Bun.serve({
 	port: 3002,
 	routes: {
 		'/swagger': getSwaggerPage,
 		'/swagger.json': getSwaggerSpec,
 		'/orders': {
-			GET: controller.listOrders.bind(controller),
-			POST: controller.createOrder.bind(controller),
+			GET: async (req) => toResponse(controller.listOrders()),
+			POST: async (req) => toResponse(controller.createOrder(req)),
 		},
 		'/orders/:id': {
-			GET: controller.getOrderById.bind(controller),
+			GET: async (req) => toResponse(controller.getOrderById(req)),
 		},
 	},
 	fetch() {
