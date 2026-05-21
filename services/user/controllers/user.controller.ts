@@ -1,39 +1,42 @@
+import { ServiceError } from '../../../contracts/service-error.js';
 import * as model from '../models/user.model.js';
-import * as view from '../views/response.view.js';
+import * as response from '../../../libs/response.js';
 
-export async function listUsers(): Promise<Response> {
-	const users = await model.findAllUsers();
-	return view.json(users);
-}
+export class UserController {
+  async listUsers(): Promise<Response> {
+    const users = await model.findAllUsers();
+    return response.json(users);
+  }
 
-export async function createUser(req: Request): Promise<Response> {
-	const body = (await req.json()) as { name?: string; email?: string };
+  async createUser(req: Request): Promise<Response | ServiceError> {
+    const body = (await req.json()) as { name?: string; email?: string };
 
-	// Validation
-	if (!body.name || !body.email) {
-		return view.text('Missing required fields: name and email', 400);
-	}
-	if (body.name.trim() === '' || body.email.trim() === '') {
-		return view.text('Fields cannot be empty', 400);
-	}
+    // Validation
+    if (!body.name || !body.email) {
+      return new ServiceError('MISSING_FIELDS', 'Missing required fields: name and email', 400);
+    }
+    if (body.name.trim() === '' || body.email.trim() === '') {
+      return new ServiceError('EMPTY_FIELDS', 'Fields cannot be empty', 400);
+    }
 
-	try {
-		const user = await model.createUser(body.name, body.email);
-		return view.json(user, 201);
-	} catch (err: any) {
-		if (err.code === '23505') {
-			return view.text('Email already exists', 400);
-		}
-		return view.text('Internal server error', 500);
-	}
-}
+    try {
+      const user = await model.createUser(body.name, body.email);
+      return response.json(user, 201);
+    } catch (err: any) {
+      if (err.code === '23505') {
+        return new ServiceError('UNIQUE_VIOLATION', 'Email already exists', 400);
+      }
+      return new ServiceError('INTERNAL_ERROR', 'Internal server error', 500);
+    }
+  }
 
-export async function getUserById(req: Request): Promise<Response> {
-	const id = (req as any).params?.id;
+  async getUserById(req: Request): Promise<Response | ServiceError> {
+    const id = (req as any).params?.id;
 
-	const user = await model.findUserById(id);
-	if (!user) {
-		return view.text('Not found', 404);
-	}
-	return view.json(user);
+    const user = await model.findUserById(id);
+    if (!user) {
+      return new ServiceError('NOT_FOUND', 'Not found', 404);
+    }
+    return response.json(user);
+  }
 }
