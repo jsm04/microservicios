@@ -15,36 +15,58 @@ services:
       timeout: 5s
       retries: 5
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      JWT_SECRET: microservicios-jwt-secret-2024
+      PASSWORD_SALT: microservicios-salt-2024
+      JWT_ISSUER: microservicios-auth
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3003/login || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
   user-service:
-    build: ./services/user
+    build:
+      context: .
+      dockerfile: services/user/Dockerfile
     ports:
       - "3001:3001"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/microservicios
       USER_SERVICE_URL: http://user-service:3001
+      JWT_SECRET: microservicios-jwt-secret-2024
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3001/users || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3001/health || exit 1"]
       interval: 3s
       timeout: 5s
       retries: 5
 
   order-service:
-    build: ./services/order
+    build:
+      context: .
+      dockerfile: services/order/Dockerfile
     ports:
       - "3002:3002"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/microservicios
       USER_SERVICE_URL: http://user-service:3001
+      JWT_SECRET: microservicios-jwt-secret-2024
     depends_on:
       user-service:
         condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3002/orders || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3002/health || exit 1"]
       interval: 3s
       timeout: 5s
       retries: 5

@@ -12,6 +12,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "jose": "^6.2.3",
     "pg": "^8.13",
     "swagger-ui-dist": "^5.18"
   }

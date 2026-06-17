@@ -5,4 +5,4 @@ COPY package.json ./
 RUN bun install
 COPY . .
 EXPOSE 3002
-CMD ["bun", "run", "index.ts"]
+CMD ["bun", "run", "services/order/index.ts"]

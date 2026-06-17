@@ -1,6 +1,7 @@
 import { getSwaggerPage, getSwaggerSpec } from './views/swagger.view.js';
 import { ServiceError } from '../../contracts/service-error.js';
 import { UserController } from './controllers/user.controller.js';
+import { validateBearerToken } from '../../libs/jwt.js';
 import { Pool } from 'pg';
 import * as response from '../../libs/response.js';
 
@@ -15,17 +16,40 @@ async function toResponse(result: Promise<Response | ServiceError>): Promise<Res
 	return value instanceof ServiceError ? response.error(value) : value;
 }
 
+// JWT validation middleware
+async function authMiddleware(req: Request): Promise<Response | null> {
+	const result = await validateBearerToken(req);
+	if (result instanceof ServiceError) {
+		return response.error(result);
+	}
+	// Attach decoded payload to request for downstream use
+	(req as any).jwtPayload = result;
+	return null; // null means "proceed to route handler"
+}
+
 const server = Bun.serve({
 	port: 3001,
 	routes: {
 		'/swagger': getSwaggerPage,
 		'/swagger.json': getSwaggerSpec,
 		'/users': {
-			GET: async (req) => toResponse(controller.listUsers()),
-			POST: async (req) => toResponse(controller.createUser(req)),
+			GET: async (req) => {
+				const auth = await authMiddleware(req);
+				if (auth) return auth;
+				return toResponse(controller.listUsers());
+			},
+			POST: async (req) => {
+				const auth = await authMiddleware(req);
+				if (auth) return auth;
+				return toResponse(controller.createUser(req));
+			},
 		},
 		'/users/:id': {
-			GET: async (req) => toResponse(controller.getUserById(req)),
+			GET: async (req) => {
+				const auth = await authMiddleware(req);
+				if (auth) return auth;
+				return toResponse(controller.getUserById(req));
+			},
 		},
 	},
 	fetch() {

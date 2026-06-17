@@ -1,17 +1,16 @@
 {
-  "name": "user-service",
+  "name": "auth-service",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/pg": "^8.11"
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
     "jose": "^6.2",
-    "pg": "^8.13"
+    "swagger-ui-dist": "^5.32.6"
   }
 }

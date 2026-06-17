@@ -2,15 +2,16 @@
 
 ## Flujo de trabajo
 
-Este proyecto implementa un sistema de microservicios compuesto por dos servicios independientes que se comunican entre sí para gestionar usuarios y pedidos. A continuación se describe el flujo completo paso a paso.
+Este proyecto implementa un sistema de microservicios compuesto por tres servicios independientes que se comunican entre sí para gestionar usuarios, pedidos y autenticación. A continuación se describe el flujo completo paso a paso.
 
 ### 1. Inicio y arranque de los servicios
 
-El sistema se compone de tres contenedores definidos en `docker-compose.yml`:
+El sistema se compone de cuatro contenedores definidos en `docker-compose.yml`:
 
-1. **PostgreSQL** (`postgres:16-alpine`) — Base de datos compartida por ambos servicios. Se inicia primero y se marca como `service_healthy` cuando `pg_isready` confirma que acepta conexiones.
-2. **User Service** — Servicio de gestión de usuarios (puerto 3001). Se inicia después de que PostgreSQL esté saludable.
-3. **Order Service** — Servicio de gestión de pedidos (puerto 3002). Se inicia después de que tanto PostgreSQL como el User Service estén saludables.
+1. **PostgreSQL** (`postgres:16-alpine`) — Base de datos compartida. Se inicia primero.
+2. **Auth Service** — Servicio de autenticación (puerto 3003). Genera y valida tokens JWT.
+3. **User Service** — Servicio de gestión de usuarios (puerto 3001). Protegido con JWT.
+4. **Order Service** — Servicio de gestión de pedidos (puerto 3002). Protegido con JWT.
 
 Esta cadena de dependencias garantiza que cada servicio esté disponible antes de que el siguiente intente conectarse a él.
 
@@ -92,10 +93,76 @@ Este es el flujo más importante del sistema, ya que involucra la comunicación 
 - Si no encuentra el pedido, responde con **404 Not Found**.
 - Si lo encuentra, responde con **200 OK** y el JSON del pedido (con `total` convertido a número).
 
-### 6. Swagger UI
+### 6. Autenticación con JWT
+
+El sistema ahora incluye un **Auth Service** que maneja la autenticación entre microservicios. El flujo es:
+
+1. **Crear un usuario** — `POST /create-user` en el Auth Service con `{ name, email, password }`. Almacena el usuario con contraseña hasheada (SHA-256) en memoria.
+2. **Iniciar sesión** — `POST /login` con `{ email, password }`. Devuelve un token JWT firmado con HS256.
+3. **Usar el token** — Incluir `Authorization: Bearer <token>` en las solicitudes a User Service u Order Service.
+4. **Validación** — El middleware verifica la firma y expiración del token. Sin token o inválido → **401 Unauthorized**.
+
+**Estructura del token JWT:**
+```json
+{
+  "sub": "<user-id>",
+  "name": "<nombre>",
+  "email": "<email>",
+  "iat": <issued-at>,
+  "exp": <expires-in-24h>,
+  "iss": "microservicios-auth"
+}
+```
+
+**Endpoints del Auth Service:**
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/create-user` | Crear usuario (almacenamiento en memoria) |
+| `POST` | `/login` | Login y obtener token JWT |
+| `GET` | `/verify` | Verificar token JWT |
+| `GET` | `/swagger` | Documentación Swagger |
+
+**Ejemplo de flujo completo:**
+
+```bash
+# 1. Crear usuario
+curl -X POST http://localhost:3003/create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ana","email":"ana@test.com","password":"secret123"}'
+
+# 2. Login para obtener token
+curl -X POST http://localhost:3003/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@test.com","password":"secret123"}'
+# Respuesta: { "token": "eyJhbGc...", "user": { ... } }
+
+# 3. Usar token para crear usuario protegido
+curl -X POST http://localhost:3001/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGc..." \
+  -d '{"name":"Carlos","email":"carlos@test.com"}'
+# Respuesta: 201 Created
+
+# 4. Intentar sin token → 401 Unauthorized
+curl -X POST http://localhost:3001/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"SinToken","email":"sin@test.com"}'
+# Respuesta: { "code": "UNAUTHORIZED", "message": "Missing or invalid authorization header" }
+
+# 5. Intentar con token inválido → 401 Unauthorized
+curl -X POST http://localhost:3001/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer invalid.token.here" \
+  -d '{"name":"Bad","email":"bad@test.com"}'
+# Respuesta: { "code": "INVALID_TOKEN", "message": "Invalid or expired token" }
+```
+
+### 7. Swagger UI
 
 Cada servicio incluye documentación Swagger/OpenAPI integrada:
 
+- **Auth Service**: `http://localhost:3003/swagger` — Documenta los endpoints de autenticación.
 - **User Service**: `http://localhost:3001/swagger` — Documenta los endpoints de usuarios.
 - **Order Service**: `http://localhost:3002/swagger` — Documenta los endpoints de pedidos.
 
@@ -145,7 +212,9 @@ Cliente
 - **Acoplamiento temporal**: El Order Service depende del User Service para validar usuarios. Si el User Service está caído, no se pueden crear pedidos.
 - **Comunicación síncrona**: La validación de usuario se realiza mediante una llamada HTTP directa (síncrona). Esto significa que el Order Service bloquea la respuesta mientras espera al User Service.
 - **Base de datos compartida**: Ambos servicios comparten la misma base de datos PostgreSQL. Esto simplifica la integridad referencial (foreign keys) pero crea un acoplamiento físico entre los servicios.
-- **Escalabilidad**: El User Service puede escalar independientemente del Order Service, ya que cada uno corre en su propio contenedor con su propio puerto.
+- **Escalabilidad**: Cada servicio puede escalar independientemente, ya que cada uno corre en su propio contenedor con su propio puerto.
+- **Autenticación JWT**: Todos los endpoints de User Service y Order Service requieren un token JWT válido. El token se genera en Auth Service y se verifica con la misma clave secreta (`JWT_SECRET`) en todos los servicios.
+- **Almacenamiento en memoria**: El Auth Service almacena usuarios en memoria (no persiste). Para producción, se debe agregar un storage persistente (base de datos) y un algoritmo de hashing más robusto (bcrypt/argon2).
 
 ## Levantar con Docker
 ```bash
@@ -156,28 +225,60 @@ docker compose up --build
 
 | Servicio | Swagger | API |
 |----------|---------|-----|
+| Auth     | `:3003/swagger` | `:3003/create-user`, `:3003/login`, `:3003/verify` |
 | User     | `:3001/swagger` | `:3001/users` |
 | Order    | `:3002/swagger` | `:3002/orders` |
 
 ## Ejemplo
 ```bash
-# Crear usuario
+# 1. Crear usuario en Auth Service
+curl -X POST http://localhost:3003/create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ana","email":"ana@test.com","password":"secret123"}'
+
+# 2. Login para obtener token
+curl -X POST http://localhost:3003/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@test.com","password":"secret123"}'
+# → { "token": "eyJhbGc...", "user": { ... } }
+
+# 3. Crear usuario protegido (con token)
 curl -X POST http://localhost:3001/users \
   -H "Content-Type: application/json" \
-  -d '{"name":"Ana","email":"ana@test.com"}'
+  -H "Authorization: Bearer <token>" \
+  -d '{"name":"Carlos","email":"carlos@test.com"}'
 
-# Crear pedido (valida usuario via HTTP call)
+# 4. Intentar sin token → 401 Unauthorized
+curl -X POST http://localhost:3001/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"SinToken","email":"sin@test.com"}'
+# → { "code": "UNAUTHORIZED", "message": "Missing or invalid authorization header" }
+
+# 5. Crear pedido protegido (con token)
 curl -X POST http://localhost:3002/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
   -d '{"userId":"1","items":["laptop","mouse"],"total":1200}'
 
-# Listar pedidos
-curl http://localhost:3002/orders
+# 6. Listar pedidos protegido (con token)
+curl http://localhost:3002/orders \
+  -H "Authorization: Bearer <token>"
 ```
 
 ## Arquitectura
 ```
-[Order Service :3002] ───HTTP──→ [User Service :3001]
-         │                           │
-         └────── PostgreSQL ────────┘
+                    ┌──────────────┐
+                    │ Auth Service │
+                    │   :3003      │
+                    │ (JWT tokens) │
+                    └──────┬───────┘
+                           │
+                           │  Authorization: Bearer <token>
+                           ▼
+┌──────────────┐         ┌──────────────┐
+│ Order Service│  GET    │ User Service │
+│  :3002       │────────▶│  :3001       │
+└──────┬───────┘         └──────┬───────┘
+       │                          │
+       └────── PostgreSQL ───────┘
 ```
