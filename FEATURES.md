@@ -10,6 +10,10 @@
 6. [US-006: Obtener un pedido por ID](#us-006-obtener-un-pedido-por-id)
 7. [US-007: Documentación Swagger](#us-007-documentación-swagger)
 8. [US-008: Levantar el sistema con Docker](#us-008-levantar-el-sistema-con-docker)
+9. [US-009: Crear usuario en Auth Service](#us-009-crear-usuario-en-auth-service)
+10. [US-010: Iniciar sesión y obtener token JWT](#us-010-iniciar-sesión-y-obtener-token-jwt)
+11. [US-011: Autenticación JWT en microservicios](#us-011-autenticación-jwt-en-microservicios)
+12. [US-012: Verificar token JWT](#us-012-verificar-token-jwt)
 
 ---
 
@@ -385,11 +389,12 @@ Cada servicio expone dos rutas relacionadas con Swagger:
 
 ### Descripción
 
-El archivo `docker-compose.yml` define tres servicios con dependencias y healthchecks:
+El archivo `docker-compose.yml` define cuatro servicios con dependencias y healthchecks:
 
 1. **PostgreSQL** — Base de datos compartida. Se verifica con `pg_isready`.
-2. **User Service** — Se construye desde `./services/user` y depende de PostgreSQL.
-3. **Order Service** — Se construye desde `./services/order` y depende de User Service y PostgreSQL.
+2. **Auth Service** — Se construye desde `./services/auth` y expone endpoints de autenticación (puerto 3003).
+3. **User Service** — Se construye desde `./services/user` y depende de PostgreSQL.
+4. **Order Service** — Se construye desde `./services/order` y depende de User Service y PostgreSQL.
 
 ### Casos de Uso
 
@@ -409,6 +414,187 @@ El archivo `docker-compose.yml` define tres servicios con dependencias y healthc
 - [ ] Los puertos 3001 y 3002 están expuestos en el host.
 - [ ] Los datos de PostgreSQL persisten entre reinicios (volumen nombrado).
 - [ ] `docker compose down` detiene y elimina todos los contenedores.
+
+---
+
+## US-009: Crear usuario en Auth Service
+
+**Tipo:** User Story / Tarea
+**Prioridad:** Alta
+**Componente:** Auth Service (`services/auth`)
+**Resumen:** Como administrador del sistema, deseo crear un usuario en el Auth Service para poder autenticarlo posteriormente.
+
+### Descripción
+
+El Auth Service expone un endpoint `POST /create-user` que recibe un objeto JSON con `name`, `email` y `password`. Almacena el usuario con la contraseña hasheada (SHA-256) en memoria y devuelve el usuario creado.
+
+### Casos de Uso
+
+| Caso de Uso | Descripción |
+|-------------|-------------|
+| **CU-009.1: Creación exitosa** | El cliente envía un JSON válido con `name`, `email` y `password` no vacíos. El servicio responde con 201 y el usuario creado. |
+| **CU-009.2: Email duplicado** | El cliente envía un `email` que ya existe en el almacenamiento. El servicio responde con 400. |
+| **CU-009.3: Campos faltantes** | El cliente omite `name`, `email` o `password`. El servicio responde con 400. |
+| **CU-009.4: Campo vacío** | El cliente envía algún campo como string vacío. El servicio responde con 400. |
+
+### Flujo de Datos
+
+```
+Cliente                          Auth Service                    Almacenamiento en memoria
+   │                                   │                                       │
+   │  POST /create-user                 │                                       │
+   │  { name, email, password }        │                                       │
+   │──────────────────────────────────▶│                                       │
+   │                                   │  hashPassword(password)               │
+   │                                   │  (SHA-256 + salt)                     │
+   │                                   │                                       │
+   │                                   │  INSERT users (en memoria)            │
+   │                                   │                                       │
+   │  201 Created                      │                                       │
+   │  { id, name, email }             │                                       │
+   │◀──────────────────────────────────│                                       │
+```
+
+### Criterios de Aceptación
+
+- [ ] El endpoint `POST /create-user` acepta JSON con `name`, `email` y `password`.
+- [ ] La contraseña se almacena hasheada (SHA-256) en memoria.
+- [ ] Se devuelve el usuario completo con `id` generado.
+- [ ] Código de respuesta: **201 Created** en éxito.
+- [ ] Código de respuesta: **400** en caso de campos faltantes, vacíos o email duplicado.
+
+---
+
+## US-010: Iniciar sesión y obtener token JWT
+
+**Tipo:** User Story / Tarea
+**Prioridad:** Alta
+**Componente:** Auth Service (`services/auth`)
+**Resumen:** Como usuario registrado, deseo iniciar sesión con mis credenciales para obtener un token JWT que me permita acceder a los microservicios protegidos.
+
+### Descripción
+
+El Auth Service expone un endpoint `POST /login` que recibe `email` y `password`, valida las credenciales contra el almacenamiento en memoria y devuelve un token JWT firmado con HS256 que expira en 24 horas.
+
+### Casos de Uso
+
+| Caso de Uso | Descripción |
+|-------------|-------------|
+| **CU-010.1: Login exitoso** | El cliente envía credenciales correctas. El servicio responde con 200, un token JWT y los datos del usuario. |
+| **CU-010.2: Credenciales inválidas** | El `email` no existe o la contraseña es incorrecta. El servicio responde con 401. |
+| **CU-010.3: Campos faltantes** | El cliente omite `email` o `password`. El servicio responde con 400. |
+
+### Flujo de Datos
+
+```
+Cliente                          Auth Service                    Almacenamiento en memoria
+   │                                   │                                       │
+   │  POST /login                       │                                       │
+   │  { email, password }              │                                       │
+   │──────────────────────────────────▶│                                       │
+   │                                   │  findUserByEmail(email)               │
+   │                                   │                                       │
+   │                                   │  ◀── Usuario encontrado ──────────────│
+   │                                   │                                       │
+   │                                   │  verifyPassword(password, hash)       │
+   │                                   │                                       │
+   │                                   │  ◀── Coincide ────────────────────────│
+   │                                   │                                       │
+   │                                   │  generateToken(sub, name, email)      │
+   │                                   │  (HS256, expira en 24h)               │
+   │                                   │                                       │
+   │  200 OK                          │                                       │
+   │  { token, user }                 │                                       │
+   │◀──────────────────────────────────│                                       │
+```
+
+### Estructura del token JWT
+
+```json
+{
+  "sub": "<user-id>",
+  "name": "<nombre>",
+  "email": "<email>",
+  "iat": <issued-at>,
+  "exp": <expires-in-24h>,
+  "iss": "microservicios-auth"
+}
+```
+
+### Criterios de Aceptación
+
+- [ ] El endpoint `POST /login` acepta JSON con `email` y `password`.
+- [ ] Se valida que el usuario exista y la contraseña coincida.
+- [ ] Se genera un token JWT firmado con HS256.
+- [ ] El token expira a las 24 horas.
+- [ ] Se devuelve el token y los datos del usuario.
+- [ ] Código de respuesta: **200 OK** en éxito.
+- [ ] Código de respuesta: **401** en caso de credenciales inválidas.
+
+---
+
+## US-011: Autenticación JWT en microservicios
+
+**Tipo:** User Story / Tarea
+**Prioridad:** Alta
+**Componente:** User Service + Order Service
+**Resumen:** Como administrador del sistema, deseo que todos los endpoints de User Service y Order Service requieran un token JWT válido para proteger el acceso a los microservicios.
+
+### Descripción
+
+Tanto el User Service como el Order Service implementan un middleware `authMiddleware` que se ejecuta antes de cada handler de ruta. Este middleware:
+
+1. Extrae el header `Authorization: Bearer <token>` de la solicitud.
+2. Valida la firma y expiración del token usando `jose/jwtVerify`.
+3. Si el token es válido, adjunta el payload decodificado a la solicitud y permite continuar.
+4. Si el token es inválido o falta, responde con **401 Unauthorized**.
+
+### Casos de Uso
+
+| Caso de Uso | Descripción |
+|-------------|-------------|
+| **CU-011.1: Solicitud con token válido** | El cliente envía un token JWT válido. El middleware lo acepta y la solicitud se procesa normalmente. |
+| **CU-011.2: Solicitud sin token** | El cliente no envía el header `Authorization`. Se responde con **401 Unauthorized**. |
+| **CU-011.3: Token inválido o expirado** | El token tiene una firma incorrecta o ya expiró. Se responde con **401 Unauthorized**. |
+
+### Criterios de Aceptación
+
+- [ ] Todos los endpoints de User Service requieren autenticación.
+- [ ] Todos los endpoints de Order Service requieren autenticación.
+- [ ] Sin `Authorization` header → **401 Unauthorized** con `{ "code": "UNAUTHORIZED", "message": "Missing or invalid authorization header" }`.
+- [ ] Token inválido → **401 Unauthorized** con `{ "code": "INVALID_TOKEN", "message": "Invalid or expired token" }`.
+- [ ] Token válido → la solicitud se procesa normalmente.
+- [ ] El mismo `JWT_SECRET` se usa en todos los servicios.
+
+---
+
+## US-012: Verificar token JWT
+
+**Tipo:** User Story / Tarea
+**Prioridad:** Media
+**Componente:** Auth Service (`services/auth`)
+**Resumen:** Como cliente, deseo verificar un token JWT en el Auth Service para confirmar su validez y obtener los datos del usuario asociado.
+
+### Descripción
+
+El Auth Service expone un endpoint `GET /verify` que recibe un token JWT en el header `Authorization: Bearer <token>`, lo valida y devuelve su contenido si es válido.
+
+### Casos de Uso
+
+| Caso de Uso | Descripción |
+|-------------|-------------|
+| **CU-012.1: Token válido** | El cliente envía un token JWT válido. El servicio responde con 200 y los datos del usuario. |
+| **CU-012.2: Token inválido** | El token tiene firma incorrecta. El servicio responde con 401. |
+| **CU-012.3: Token expirado** | El token ya expiró. El servicio responde con 401. |
+| **CU-012.4: Sin token** | El cliente no envía `Authorization`. El servicio responde con 401. |
+
+### Criterios de Aceptación
+
+- [ ] El endpoint `GET /verify` acepta un token en el header `Authorization`.
+- [ ] Token válido → **200 OK** con `{ "valid": true, "user": { id, name, email } }`.
+- [ ] Token inválido → **401 Unauthorized**.
+- [ ] Token expirado → **401 Unauthorized**.
+- [ ] Sin token → **401 Unauthorized**.
 
 ---
 
@@ -439,7 +625,11 @@ US-004 (Crear pedido)
 5. **US-004** — Implementar Order Service con validación HTTP
 6. **US-005** — Listar pedidos
 7. **US-006** — Obtener pedido por ID
-8. **US-007** — Documentación Swagger (puede hacerse en paralelo)
+8. **US-009** — Implementar Auth Service (crear usuario + login)
+9. **US-010** — Generar tokens JWT
+10. **US-011** — Middleware de autenticación JWT en User/Order Service
+11. **US-012** — Verificar token JWT
+12. **US-007** — Documentación Swagger (puede hacerse en paralelo)
 
 ---
 
@@ -453,5 +643,8 @@ US-004 (Crear pedido)
 | `POST` | `/orders` | Order | Crear pedido | 201 + pedido | 404 (usuario no existe) |
 | `GET` | `/orders` | Order | Listar pedidos | 200 + arreglo | — |
 | `GET` | `/orders/:id` | Order | Obtener pedido | 200 + pedido | 404 (no encontrado) |
-| `GET` | `/swagger` | Ambos | Swagger UI | 200 + HTML | — |
-| `GET` | `/swagger.json` | Ambos | OpenAPI spec | 200 + JSON | — |
+| `POST` | `/create-user` | Auth | Crear usuario (auth) | 201 + usuario | 400 (campos faltantes / email duplicado) |
+| `POST` | `/login` | Auth | Login y obtener token | 200 + { token, user } | 401 (credenciales inválidas) |
+| `GET` | `/verify` | Auth | Verificar token | 200 + { valid, user } | 401 (token inválido) |
+| `GET` | `/swagger` | Todos | Swagger UI | 200 + HTML | — |
+| `GET` | `/swagger.json` | Todos | OpenAPI spec | 200 + JSON | — |
