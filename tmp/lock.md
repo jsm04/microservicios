@@ -4,10 +4,14 @@ Prevents multiple sessions from working on the same task simultaneously.
 
 ## Current Lock
 
-- **Task ID:** 001
-- **Locked by:** session (2026-06-25)
-- **Locked at:** 2026-06-25
-- **Reason:** Migrate Auth service to PostgreSQL
+- **No active lock**
+
+## Last Released Locks
+
+| Task ID | Released by | Released at | Reason |
+|---------|-------------|-------------|--------|
+| 001 | session | 2026-06-25 | Committed in 7ebb229 |
+| 003 | session | 2026-06-25 | Committed in 7ebb229 |
 
 ## Rules
 

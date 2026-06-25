@@ -4,23 +4,23 @@ Current session state. Updated by agents between tasks to enable seamless handof
 
 ## Active Task
 
-- **Task ID:** 003
-- **Task Title:** Add integration tests for Order → User client
-- **Status:** in-progress
-- **Started:** 2026-06-25
-- **Last action:** Starting task — exploring Order service structure and User client
-- **Last commit:** —
+- **Task ID:** —
+- **Task Title:** —
+- **Status:** idle
+- **Started:** —
+- **Last action:** Committed tasks 001 and 003 (commit 7ebb229)
+- **Last commit:** 7ebb229
 
 ## What's Next
 
-- [ ] Explore services/order structure and HttpUserClient usage
-- [ ] Create services/order/tests/integration.test.ts
-- [ ] Run tests and verify
+- [ ] Task 004: Document API contracts per service (no dependencies)
+- [ ] Task 008: Add rate limiting to Auth endpoints (no dependencies)
 
 ## Pending Reviews
 
-- [ ] Task ID — Review notes pending
+- [ ] — 
 
 ## Notes
 
-Session is executing tasks 001, 003, 004, 008. Task 001 in progress. Tasks 003 depends on 001 completion.
+Completed: 001 (auth postgres migration), 002 (health checks), 003 (order integration tests), 005 (swagger fix).
+Remaining active: 004, 008. Next task: 004 or 008 (both independent).

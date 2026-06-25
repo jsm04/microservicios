@@ -39,11 +39,11 @@ This file defines the active task set for the current project phase. Agents shou
 
 | Field | Value |
 |-------|-------|
-| **Task ID** | 001 |
-| **Title** | Migrate Auth service to PostgreSQL |
+| **Task ID** | 004 |
+| **Title** | Document API contracts per service |
 | **Set by** | session |
 | **Set at** | 2026-06-25 |
-| **Notes** | Auth currently uses in-memory store; User and Order services use PostgreSQL. Align persistence layer. Task 008 (rate limiting) is independent and can be done in parallel. |
+| **Notes** | No dependencies. Task 008 (rate limiting) is also independent and can be done in parallel. |
 
 ## Dependency Rules
 
