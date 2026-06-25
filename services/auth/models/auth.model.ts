@@ -1,4 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { Pool } from 'pg';
+
+const db = new Pool({
+	connectionString: process.env.DATABASE_URL,
+});
 
 // --- Types ---
 
@@ -8,10 +13,6 @@ export interface User {
 	email: string;
 	password: string; // SHA-256 hash
 }
-
-// --- In-memory store ---
-
-const users: User[] = [];
 
 // --- Password hashing ---
 
@@ -33,21 +34,39 @@ export async function createUser(
 ): Promise<User> {
 	const hashedPassword = await hashPassword(password);
 	const id = randomUUID();
-	const user: User = { id, name, email, password: hashedPassword };
-	users.push(user);
-	return user;
+	const res = await db.query(
+		'INSERT INTO users (id, name, email, password) VALUES ($1, $2, $3, $4) RETURNING id, name, email',
+		[id, name, email, hashedPassword],
+	);
+	return { id: res.rows[0].id, name: res.rows[0].name, email: res.rows[0].email, password: hashedPassword };
 }
 
-export function findUserByEmail(email: string): User | undefined {
-	return users.find((u) => u.email === email);
+export async function findUserByEmail(email: string): Promise<User | undefined> {
+	const res = await db.query(
+		'SELECT id, name, email, password FROM users WHERE email = $1',
+		[email],
+	);
+	if (res.rows.length === 0) return undefined;
+	const row = res.rows[0];
+	return { id: row.id, name: row.name, email: row.email, password: row.password };
 }
 
-export function findUserById(id: string): User | undefined {
-	return users.find((u) => u.id === id);
+export async function findUserById(id: string): Promise<User | undefined> {
+	const res = await db.query(
+		'SELECT id, name, email, password FROM users WHERE id = $1',
+		[id],
+	);
+	if (res.rows.length === 0) return undefined;
+	const row = res.rows[0];
+	return { id: row.id, name: row.name, email: row.email, password: row.password };
 }
 
-export function emailExists(email: string): boolean {
-	return users.some((u) => u.email === email);
+export async function emailExists(email: string): Promise<boolean> {
+	const res = await db.query(
+		'SELECT 1 FROM users WHERE email = $1 LIMIT 1',
+		[email],
+	);
+	return res.rows.length > 0;
 }
 
 export async function verifyPassword(

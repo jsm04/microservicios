@@ -4,16 +4,20 @@ Current session state. Updated by agents between tasks to enable seamless handof
 
 ## Active Task
 
-- **Task ID:** —
-- **Task Title:** —
-- **Status:** idle (idle | working | reviewing | committed)
-- **Started:** —
-- **Last action:** —
+- **Task ID:** 001
+- **Task Title:** Migrate Auth service to PostgreSQL
+- **Status:** working
+- **Started:** 2026-06-25
+- **Last action:** Setting up task files and lock
 - **Last commit:** —
 
 ## What's Next
 
-- [ ] Next task to work on: —
+- [ ] Create services/auth/schema.sql
+- [ ] Add pg dependency to Auth package.json
+- [ ] Rewrite auth.model.ts with PostgreSQL queries
+- [ ] Update auth/index.ts with DB pool
+- [ ] Test and commit
 
 ## Pending Reviews
 
@@ -21,4 +25,4 @@ Current session state. Updated by agents between tasks to enable seamless handof
 
 ## Notes
 
-<!-- Any context the next session needs. Keep it brief. -->
+Session is executing tasks 001, 003, 004, 008. Task 001 in progress. Tasks 003 depends on 001 completion.

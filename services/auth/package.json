@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "jose": "^6.2",
+    "pg": "^8.13",
     "swagger-ui-dist": "^5.32.6"
   }
 }

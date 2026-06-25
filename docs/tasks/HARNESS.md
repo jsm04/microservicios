@@ -14,6 +14,7 @@ This file defines the active task set for the current project phase. Agents shou
 | 001 | Migrate Auth service to PostgreSQL | not-started | none |
 | 003 | Add integration tests for Order → User client | not-started | 001 |
 | 004 | Document API contracts per service | not-started | none |
+| 008 | Add rate limiting to Auth endpoints | not-started | none |
 
 ## Completed Tasks
 
@@ -42,7 +43,7 @@ This file defines the active task set for the current project phase. Agents shou
 | **Title** | Migrate Auth service to PostgreSQL |
 | **Set by** | session |
 | **Set at** | 2026-06-25 |
-| **Notes** | Auth currently uses in-memory store; User and Order services use PostgreSQL. Align persistence layer. |
+| **Notes** | Auth currently uses in-memory store; User and Order services use PostgreSQL. Align persistence layer. Task 008 (rate limiting) is independent and can be done in parallel. |
 
 ## Dependency Rules
 

@@ -4,10 +4,10 @@ Prevents multiple sessions from working on the same task simultaneously.
 
 ## Current Lock
 
-- **Task ID:** —
-- **Locked by:** — (session identifier, e.g., agent name or timestamp)
-- **Locked at:** —
-- **Reason:** —
+- **Task ID:** 001
+- **Locked by:** session (2026-06-25)
+- **Locked at:** 2026-06-25
+- **Reason:** Migrate Auth service to PostgreSQL
 
 ## Rules
 

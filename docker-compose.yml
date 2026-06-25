@@ -22,9 +22,13 @@ services:
     ports:
       - "3003:3003"
     environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/microservicios
       JWT_SECRET: microservicios-jwt-secret-2024
       PASSWORD_SALT: microservicios-salt-2024
       JWT_ISSUER: microservicios-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:3003/health || exit 1"]
       interval: 3s

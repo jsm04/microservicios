@@ -1,7 +1,12 @@
 import { AuthController } from "./controllers/auth.controller.js";
 import { getSwaggerPage, getSwaggerSpec } from "./views/swagger.view.js";
 import { ServiceError } from "../../contracts/service-error.js";
+import { Pool } from "pg";
 import * as response from "../../libs/response.js";
+
+const db = new Pool({
+	connectionString: process.env.DATABASE_URL,
+});
 
 const controller = new AuthController();
 
@@ -42,7 +47,9 @@ console.log(`Auth service → http://localhost:${server.port}`);
 async function shutdown() {
 	console.log("Shutting down...");
 	await server.stop();
-	console.log("Server stopped.");
+	console.log("Server stopped. Closing DB pool...");
+	await db.end();
+	console.log("DB pool closed.");
 }
 
 process.on("SIGTERM", shutdown);
