@@ -6,12 +6,12 @@ import * as response from '../../../libs/response.js';
 export class OrderController {
   constructor(private userClient: UserClient) {}
 
-  async listOrders(): Promise<Response> {
+  async list(): Promise<Response> {
     const orders = await model.findAllOrders();
     return response.json(orders);
   }
 
-  async createOrder(req: Request): Promise<Response | ServiceError> {
+  async create(req: Request): Promise<Response | ServiceError> {
     const body = (await req.json()) as {
       userId?: string;
       items?: string[];
@@ -40,7 +40,7 @@ export class OrderController {
     }
   }
 
-  async getOrderById(req: Request): Promise<Response | ServiceError> {
+  async getById(req: Request): Promise<Response | ServiceError> {
     const id = (req as any).params?.id;
 
     const order = await model.findOrderById(id);

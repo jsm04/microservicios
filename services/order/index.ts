@@ -38,19 +38,19 @@ const server = Bun.serve({
 			GET: async (req) => {
 				const auth = await authMiddleware(req);
 				if (auth) return auth;
-				return toResponse(controller.listOrders());
+				return toResponse(controller.list());
 			},
 			POST: async (req) => {
 				const auth = await authMiddleware(req);
 				if (auth) return auth;
-				return toResponse(controller.createOrder(req));
+				return toResponse(controller.create(req));
 			},
 		},
 		'/orders/:id': {
 			GET: async (req) => {
 				const auth = await authMiddleware(req);
 				if (auth) return auth;
-				return toResponse(controller.getOrderById(req));
+				return toResponse(controller.getById(req));
 			},
 		},
 	},
