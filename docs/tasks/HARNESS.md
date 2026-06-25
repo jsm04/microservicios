@@ -11,8 +11,6 @@ This file defines the active task set for the current project phase. Agents shou
 
 | ID | Title | Status | Dependencies |
 |----|-------|--------|--------------|
-| 001 | Migrate Auth service to PostgreSQL | not-started | none |
-| 003 | Add integration tests for Order → User client | not-started | 001 |
 | 004 | Document API contracts per service | not-started | none |
 | 008 | Add rate limiting to Auth endpoints | not-started | none |
 
@@ -22,6 +20,8 @@ This file defines the active task set for the current project phase. Agents shou
 
 | ID | Title | Completed | Notes |
 |----|-------|-----------|-------|
+| 003 | Add integration tests for Order → User client | 2026-06-25 | Created 6 tests covering happy path, error path, validation, and DB error handling |
+| 001 | Migrate Auth service to PostgreSQL | 2026-06-25 | Fixed missing await on emailExists() and findUserByEmail(); created 15 unit tests |
 | 002 | Add health check endpoints to all services | 2026-06-25 | Added /health to Auth, User, Order; updated docker-compose |
 | 005 | Fix swagger UI in Auth service | 2026-06-25 | Replaced local swagger-ui-dist with CDN; removed dead route |
 

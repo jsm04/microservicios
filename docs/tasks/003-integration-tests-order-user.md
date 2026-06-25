@@ -4,11 +4,9 @@
 
 - **ID:** 003
 - **Title:** Add integration tests for Order → User client
-- **Status:** not-started
-- **Parent spec:** —
-- **Dependencies:** 001 (Auth migration to PostgreSQL, so all services share the same DB)
+- **Status:** completed
 - **Created:** 2026-06-25
-- **Completed:** —
+- **Completed:** 2026-06-25
 
 ## Scope
 

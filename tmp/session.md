@@ -4,20 +4,18 @@ Current session state. Updated by agents between tasks to enable seamless handof
 
 ## Active Task
 
-- **Task ID:** 001
-- **Task Title:** Migrate Auth service to PostgreSQL
-- **Status:** working
+- **Task ID:** 003
+- **Task Title:** Add integration tests for Order → User client
+- **Status:** in-progress
 - **Started:** 2026-06-25
-- **Last action:** Setting up task files and lock
+- **Last action:** Starting task — exploring Order service structure and User client
 - **Last commit:** —
 
 ## What's Next
 
-- [ ] Create services/auth/schema.sql
-- [ ] Add pg dependency to Auth package.json
-- [ ] Rewrite auth.model.ts with PostgreSQL queries
-- [ ] Update auth/index.ts with DB pool
-- [ ] Test and commit
+- [ ] Explore services/order structure and HttpUserClient usage
+- [ ] Create services/order/tests/integration.test.ts
+- [ ] Run tests and verify
 
 ## Pending Reviews
 

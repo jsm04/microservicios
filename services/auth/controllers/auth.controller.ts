@@ -14,7 +14,7 @@ export class AuthController {
       return new ServiceError('EMPTY_FIELDS', 'Fields cannot be empty', 400);
     }
 
-    if (emailExists(body.email)) {
+    if (await emailExists(body.email)) {
       return new ServiceError('EMAIL_EXISTS', 'Email already registered', 400);
     }
 
@@ -29,7 +29,7 @@ export class AuthController {
       return new ServiceError('MISSING_FIELDS', 'Missing required fields: email and password', 400);
     }
 
-    const user = findUserByEmail(body.email);
+    const user = await findUserByEmail(body.email);
     if (!user) {
       return new ServiceError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
     }

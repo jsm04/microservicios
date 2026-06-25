@@ -1,9 +1,27 @@
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 
-const db = new Pool({
-	connectionString: process.env.DATABASE_URL,
-});
+// Allow test injection of the pool
+let _db: Pool | null = null;
+
+export function setTestPool(pool: Pool): void {
+	_db = pool;
+}
+
+function getDb(): Pool {
+	return _db || new Pool({
+		connectionString: process.env.DATABASE_URL,
+	});
+}
+export function setTestPool(pool: Pool): void {
+	_db = pool;
+}
+
+function getDb(): Pool {
+	return _db || new Pool({
+		connectionString: process.env.DATABASE_URL,
+	});
+}
 
 // --- Types ---
 
@@ -34,7 +52,7 @@ export async function createUser(
 ): Promise<User> {
 	const hashedPassword = await hashPassword(password);
 	const id = randomUUID();
-	const res = await db.query(
+	const res = await getDb().query(
 		'INSERT INTO users (id, name, email, password) VALUES ($1, $2, $3, $4) RETURNING id, name, email',
 		[id, name, email, hashedPassword],
 	);
