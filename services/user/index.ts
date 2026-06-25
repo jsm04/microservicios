@@ -30,6 +30,11 @@ async function authMiddleware(req: Request): Promise<Response | null> {
 const server = Bun.serve({
 	port: 3001,
 	routes: {
+		'/health': {
+			GET: () => new Response(JSON.stringify({ status: 'ok' }), {
+				headers: { 'Content-Type': 'application/json' },
+			}),
+		},
 		'/swagger': getSwaggerPage,
 		'/swagger.json': getSwaggerSpec,
 		'/users': {

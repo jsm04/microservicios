@@ -2,7 +2,6 @@ import { AuthController } from "./controllers/auth.controller.js";
 import { getSwaggerPage, getSwaggerSpec } from "./views/swagger.view.js";
 import { ServiceError } from "../../contracts/service-error.js";
 import * as response from "../../libs/response.js";
-import { join } from "node:path";
 
 const controller = new AuthController();
 
@@ -16,17 +15,13 @@ async function toResponse(
 const server = Bun.serve({
 	port: 3003,
 	routes: {
+		"/health": {
+			GET: () => new Response(JSON.stringify({ status: "ok" }), {
+				headers: { "Content-Type": "application/json" },
+			}),
+		},
 		"/swagger": getSwaggerPage,
 		"/swagger.json": getSwaggerSpec,
-		"/swagger-ui-dist/**": (req) => {
-			const filePath = join(
-				__dirname,
-				"node_modules",
-				"swagger-ui-dist",
-				req.url.slice("/swagger-ui-dist".length),
-			);
-			return new Response(Bun.file(filePath));
-		},
 		"/create-user": {
 			POST: async (req) => toResponse(controller.createUser(req)),
 		},

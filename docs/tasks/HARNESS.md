@@ -12,7 +12,6 @@ This file defines the active task set for the current project phase. Agents shou
 | ID | Title | Status | Dependencies |
 |----|-------|--------|--------------|
 | 001 | Migrate Auth service to PostgreSQL | not-started | none |
-| 002 | Add health check endpoints to all services | not-started | none |
 | 003 | Add integration tests for Order → User client | not-started | 001 |
 | 004 | Document API contracts per service | not-started | none |
 
@@ -22,7 +21,8 @@ This file defines the active task set for the current project phase. Agents shou
 
 | ID | Title | Completed | Notes |
 |----|-------|-----------|-------|
-| — | — | — | — |
+| 002 | Add health check endpoints to all services | 2026-06-25 | Added /health to Auth, User, Order; updated docker-compose |
+| 005 | Fix swagger UI in Auth service | 2026-06-25 | Replaced local swagger-ui-dist with CDN; removed dead route |
 
 ## Deferred Tasks
 
@@ -40,7 +40,7 @@ This file defines the active task set for the current project phase. Agents shou
 |-------|-------|
 | **Task ID** | 001 |
 | **Title** | Migrate Auth service to PostgreSQL |
-| **Set by** | — |
+| **Set by** | session |
 | **Set at** | 2026-06-25 |
 | **Notes** | Auth currently uses in-memory store; User and Order services use PostgreSQL. Align persistence layer. |
 
