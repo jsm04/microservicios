@@ -60,10 +60,20 @@ function createRequest(method: string, url: string, body?: any, headers: Record<
   });
 }
 
-// --- Helper: check if result is a ServiceError ---
+// --- Helper: declarative result handler — eliminates all type narrowing from tests ---
 
-function isError(result: any): result is Error & { code: string; status: number } {
-  return result instanceof Error && 'code' in result && 'status' in result;
+async function assertResult(
+  result: Response | Error & { code: string; status: number },
+  opts: {
+    onResponse?: (res: Response) => Promise<void> | void;
+    onError?: (err: Error & { code: string; status: number }) => void;
+  },
+): Promise<void> {
+  if (result instanceof Response) {
+    await opts.onResponse?.(result);
+  } else {
+    opts.onError?.(result);
+  }
 }
 
 // --- Test Suites ---
@@ -123,12 +133,14 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(result).toBeInstanceOf(Response);
-      const res = result as Response;
-      expect(res.status).toBe(201);
-      const body = await res.json();
-      expect(body.name).toBe('Test User');
-      expect(body.email).toBe('test@example.com');
+      await assertResult(result, {
+        onResponse: async (res) => {
+          expect(res.status).toBe(201);
+          const body = await res.json();
+          expect(body.name).toBe('Test User');
+          expect(body.email).toBe('test@example.com');
+        },
+      });
     });
 
     it('returns EMAIL_EXISTS when email already registered', async () => {
@@ -147,9 +159,12 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('EMAIL_EXISTS');
-      expect(result.status).toBe(400);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('EMAIL_EXISTS');
+          expect(err.status).toBe(400);
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when name is missing', async () => {
@@ -159,9 +174,12 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
-      expect(result.status).toBe(400);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+          expect(err.status).toBe(400);
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when email is missing', async () => {
@@ -171,8 +189,11 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when password is missing', async () => {
@@ -182,8 +203,11 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when name is empty string', async () => {
@@ -194,9 +218,12 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
-      expect(result.status).toBe(400);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+          expect(err.status).toBe(400);
+        },
+      });
     });
 
     it('returns EMPTY_FIELDS when email is whitespace only', async () => {
@@ -207,8 +234,11 @@ describe('AuthController', () => {
       });
 
       const result = await controller.createUser(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('EMPTY_FIELDS');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('EMPTY_FIELDS');
+        },
+      });
     });
   });
 
@@ -237,12 +267,14 @@ describe('AuthController', () => {
       });
 
       const result = await controller.login(req);
-      expect(result).toBeInstanceOf(Response);
-      const res = result as Response;
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.token).toBeDefined();
-      expect(body.user.email).toBe('test@example.com');
+      await assertResult(result, {
+        onResponse: async (res) => {
+          expect(res.status).toBe(200);
+          const body = await res.json();
+          expect(body.token).toBeDefined();
+          expect(body.user.email).toBe('test@example.com');
+        },
+      });
     });
 
     it('returns INVALID_CREDENTIALS when user not found', async () => {
@@ -256,9 +288,12 @@ describe('AuthController', () => {
       });
 
       const result = await controller.login(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('INVALID_CREDENTIALS');
-      expect(result.status).toBe(401);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('INVALID_CREDENTIALS');
+          expect(err.status).toBe(401);
+        },
+      });
     });
 
     it('returns INVALID_CREDENTIALS when password is wrong', async () => {
@@ -281,9 +316,12 @@ describe('AuthController', () => {
       });
 
       const result = await controller.login(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('INVALID_CREDENTIALS');
-      expect(result.status).toBe(401);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('INVALID_CREDENTIALS');
+          expect(err.status).toBe(401);
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when email is missing', async () => {
@@ -292,8 +330,11 @@ describe('AuthController', () => {
       });
 
       const result = await controller.login(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+        },
+      });
     });
 
     it('returns MISSING_FIELDS when password is missing', async () => {
@@ -302,8 +343,11 @@ describe('AuthController', () => {
       });
 
       const result = await controller.login(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('MISSING_FIELDS');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('MISSING_FIELDS');
+        },
+      });
     });
   });
 
@@ -311,9 +355,12 @@ describe('AuthController', () => {
     it('returns UNAUTHORIZED when no Authorization header', async () => {
       const req = createRequest('GET', 'http://localhost/verify');
       const result = await controller.verify(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('UNAUTHORIZED');
-      expect(result.status).toBe(401);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('UNAUTHORIZED');
+          expect(err.status).toBe(401);
+        },
+      });
     });
 
     it('returns UNAUTHORIZED when Authorization header is not Bearer', async () => {
@@ -321,8 +368,11 @@ describe('AuthController', () => {
         Authorization: 'Basic dXNlcjpwYXNz',
       });
       const result = await controller.verify(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('UNAUTHORIZED');
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('UNAUTHORIZED');
+        },
+      });
     });
 
     it('returns INVALID_TOKEN when token is invalid', async () => {
@@ -330,9 +380,12 @@ describe('AuthController', () => {
         Authorization: 'Bearer invalid-token-here',
       });
       const result = await controller.verify(req);
-      expect(isError(result)).toBe(true);
-      expect(result.code).toBe('INVALID_TOKEN');
-      expect(result.status).toBe(401);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('INVALID_TOKEN');
+          expect(err.status).toBe(401);
+        },
+      });
     });
   });
 });
