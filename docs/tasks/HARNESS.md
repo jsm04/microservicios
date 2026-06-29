@@ -24,6 +24,7 @@ This file defines the active task set for the current project phase. Agents shou
 | 001 | Migrate Auth service to PostgreSQL | 2026-06-25 | Fixed missing await on emailExists() and findUserByEmail(); created 15 unit tests |
 | 002 | Add health check endpoints to all services | 2026-06-25 | Added /health to Auth, User, Order; updated docker-compose |
 | 005 | Fix swagger UI in Auth service | 2026-06-25 | Replaced local swagger-ui-dist with CDN; removed dead route |
+| **009** | Fix auth.model.ts `db` reference bug and clean up duplicate code | **2026-06-29** | Fixed 3 `db.query` → `getDb().query` calls + removed duplicate block; all 15 tests pass.
 
 ## Deferred Tasks
 
@@ -41,9 +42,9 @@ This file defines the active task set for the current project phase. Agents shou
 |-------|-------|
 | **Task ID** | 004 |
 | **Title** | Document API contracts per service |
-| **Set by** | session |
-| **Set at** | 2026-06-25 |
-| **Notes** | No dependencies. Task 008 (rate limiting) is also independent and can be done in parallel. |
+| **Set by** | agent |
+| **Set at** | 2026-06-29 |
+| **Notes** | 009 completed. Next pending task by ID order. Independent of others.
 
 ## Dependency Rules
 

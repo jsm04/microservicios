@@ -13,15 +13,6 @@ function getDb(): Pool {
 		connectionString: process.env.DATABASE_URL,
 	});
 }
-export function setTestPool(pool: Pool): void {
-	_db = pool;
-}
-
-function getDb(): Pool {
-	return _db || new Pool({
-		connectionString: process.env.DATABASE_URL,
-	});
-}
 
 // --- Types ---
 
@@ -60,7 +51,7 @@ export async function createUser(
 }
 
 export async function findUserByEmail(email: string): Promise<User | undefined> {
-	const res = await db.query(
+	const res = await getDb().query(
 		'SELECT id, name, email, password FROM users WHERE email = $1',
 		[email],
 	);
@@ -70,7 +61,7 @@ export async function findUserByEmail(email: string): Promise<User | undefined> 
 }
 
 export async function findUserById(id: string): Promise<User | undefined> {
-	const res = await db.query(
+	const res = await getDb().query(
 		'SELECT id, name, email, password FROM users WHERE id = $1',
 		[id],
 	);
@@ -80,7 +71,7 @@ export async function findUserById(id: string): Promise<User | undefined> {
 }
 
 export async function emailExists(email: string): Promise<boolean> {
-	const res = await db.query(
+	const res = await getDb().query(
 		'SELECT 1 FROM users WHERE email = $1 LIMIT 1',
 		[email],
 	);
