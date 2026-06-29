@@ -11,8 +11,6 @@ This file defines the active task set for the current project phase. Agents shou
 
 | ID | Title | Status | Dependencies |
 |----|-------|--------|--------------|
-| 008 | Add rate limiting to Auth endpoints | not-started | none |
-
 ## Completed Tasks
 
 <!-- Move tasks here when they are done. Agents should not re-review these unless explicitly referenced. -->
@@ -25,6 +23,7 @@ This file defines the active task set for the current project phase. Agents shou
 | 005 | Fix swagger UI in Auth service | 2026-06-25 | Replaced local swagger-ui-dist with CDN; removed dead route |
 | **009** | Fix auth.model.ts `db` reference bug and clean up duplicate code | **2026-06-29** | Fixed 3 `db.query` → `getDb().query` calls + removed duplicate block; all 15 tests pass.
 | **004** | Document API contracts per service | **2026-06-29** | Created `docs/api-contracts.md` covering all 3 services, cross-service contracts, auth flow.
+| **008** | Add rate limiting to Auth endpoints | **2026-06-29** | Fixed-window rate limiter (10 req/min/IP) on /create-user and /login; cleanup interval; 17/17 tests pass.
 
 ## Deferred Tasks
 
@@ -40,11 +39,11 @@ This file defines the active task set for the current project phase. Agents shou
 
 | Field | Value |
 |-------|-------|
-| **Task ID** | 008 |
-| **Title** | Add rate limiting to Auth endpoints |
+| **Task ID** | — |
+| **Title** | All active tasks completed |
 | **Set by** | agent |
 | **Set at** | 2026-06-29 |
-| **Notes** | 004 completed. Next pending task by ID order.
+| **Notes** | Tasks 001–009 all done. No remaining active tasks. Awaiting new specs or user direction.
 
 ## Dependency Rules
 

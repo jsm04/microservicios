@@ -4,11 +4,11 @@
 
 - **ID:** 008
 - **Title:** Add rate limiting to Auth endpoints
-- **Status:** not-started
+- **Status:** completed
 - **Parent spec:** —
 - **Dependencies:** none
 - **Created:** 2026-06-25
-- **Completed:** —
+- **Completed:** 2026-06-29
 
 ## Scope
 
@@ -96,6 +96,7 @@
 | Date | Agent | Action | Notes |
 |------|-------|--------|-------|
 | 2026-06-25 | — | Created | Initial task breakdown |
+| 2026-06-29 | agent | Executed | Created rate-limiter.ts (fixed window, 10 req/min/IP), added to /create-user and /login, cleanup interval in index.ts. 17/17 tests pass.
 
 ## Lock Management
 

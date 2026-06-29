@@ -1,4 +1,5 @@
 import { AuthController } from "./controllers/auth.controller.js";
+import { clearExpired } from "./lib/rate-limiter.js";
 import { getSwaggerPage, getSwaggerSpec } from "./views/swagger.view.js";
 import { ServiceError } from "../../contracts/service-error.js";
 import { Pool } from "pg";
@@ -43,6 +44,9 @@ const server = Bun.serve({
 });
 
 console.log(`Auth service → http://localhost:${server.port}`);
+
+// Cleanup expired rate limit entries every 2 minutes
+setInterval(clearExpired, 120_000);
 
 async function shutdown() {
 	console.log("Shutting down...");

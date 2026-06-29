@@ -1,10 +1,20 @@
 import { ServiceError } from '../../../contracts/service-error.js';
 import * as response from '../../../libs/response.js';
+import { checkRateLimit } from '../lib/rate-limiter.js';
 import { createUser, findUserByEmail, verifyPassword, emailExists } from '../models/auth.model.js';
 import { generateToken } from '../../../libs/jwt.js';
 
 export class AuthController {
+  private getIp(req: Request): string {
+    return req.headers.get('X-Forwarded-For')?.split(',')[0].trim() || '127.0.0.1';
+  }
+
   async createUser(req: Request): Promise<Response | ServiceError> {
+    const rate = checkRateLimit(this.getIp(req));
+    if (!rate.allowed) {
+      return new ServiceError('RATE_LIMITED', `Too many requests, try again in ${rate.retryAfter}s`, 429);
+    }
+
     const body = (await req.json()) as { name?: string; email?: string; password?: string };
 
     if (!body.name || !body.email || !body.password) {
@@ -23,6 +33,11 @@ export class AuthController {
   }
 
   async login(req: Request): Promise<Response | ServiceError> {
+    const rate = checkRateLimit(this.getIp(req));
+    if (!rate.allowed) {
+      return new ServiceError('RATE_LIMITED', `Too many requests, try again in ${rate.retryAfter}s`, 429);
+    }
+
     const body = (await req.json()) as { email?: string; password?: string };
 
     if (!body.email || !body.password) {

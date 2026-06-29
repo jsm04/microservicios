@@ -12,6 +12,7 @@ Prevents multiple sessions from working on the same task simultaneously.
 |---------|-------------|-------------|--------|
 | 001 | session | 2026-06-25 | Committed in 7ebb229 |
 | 003 | session | 2026-06-25 | Committed in 7ebb229 |
+| **008** | agent | 2026-06-29 | Task completed — rate limiter implemented and tested
 
 ## Rules
 

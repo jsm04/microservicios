@@ -101,6 +101,12 @@ describe('AuthController', () => {
         end = async () => {};
       },
     }));
+
+    // Mock rate limiter — always allow by default to not interfere with existing tests
+    mock.module('./lib/rate-limiter.js', () => ({
+      checkRateLimit: () => ({ allowed: true }),
+      clearExpired: () => {},
+    }));
   });
 
   afterEach(() => {
@@ -384,6 +390,101 @@ describe('AuthController', () => {
         onError: (err) => {
           expect(err.code).toBe('INVALID_TOKEN');
           expect(err.status).toBe(401);
+        },
+      });
+    });
+  });
+
+  describe('rate limiting', () => {
+    it('returns RATE_LIMITED after 10 requests in login', async () => {
+      const ip = '10.0.0.1';
+
+      // Mock rate limiter with tracking
+      let requestCount = 0;
+      mock.module('./lib/rate-limiter.js', () => ({
+        checkRateLimit: (reqIp: string) => {
+          if (reqIp === ip && requestCount >= 10) {
+            return { allowed: false, retryAfter: 50 };
+          }
+          if (reqIp === ip) {
+            requestCount++;
+          }
+          return { allowed: true };
+        },
+        clearExpired: () => {},
+      }));
+
+      mock.module('./models/auth.model.js', () => ({
+        findUserByEmail: async () => undefined,
+      }));
+
+      // Send 10 requests (all allowed)
+      for (let i = 0; i < 10; i++) {
+        const req = createRequest('POST', 'http://localhost/login', {
+          email: 'test@example.com',
+          password: 'password123',
+        }, { 'X-Forwarded-For': ip });
+        await controller.login(req);
+      }
+
+      // 11th request should be rate limited
+      const req = createRequest('POST', 'http://localhost/login', {
+        email: 'test@example.com',
+        password: 'password123',
+      }, { 'X-Forwarded-For': ip });
+      const result = await controller.login(req);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('RATE_LIMITED');
+          expect(err.status).toBe(429);
+          expect(err.message).toContain('try again');
+        },
+      });
+    });
+
+    it('returns RATE_LIMITED after 10 requests in createUser', async () => {
+      const ip = '10.0.0.2';
+      let requestCount = 0;
+
+      mock.module('./lib/rate-limiter.js', () => ({
+        checkRateLimit: (reqIp: string) => {
+          if (reqIp === ip && requestCount >= 10) {
+            return { allowed: false, retryAfter: 50 };
+          }
+          if (reqIp === ip) {
+            requestCount++;
+          }
+          return { allowed: true };
+        },
+        clearExpired: () => {},
+      }));
+
+      mock.module('./models/auth.model.js', () => ({
+        emailExists: async () => false,
+        createUser: async () => ({ id: 'id', name: 'x', email: 'x', password: 'x' }),
+      }));
+
+      // Send 10 requests (all allowed)
+      for (let i = 0; i < 10; i++) {
+        const req = createRequest('POST', 'http://localhost/create-user', {
+          name: 'Test',
+          email: 'test@example.com',
+          password: 'password123',
+        }, { 'X-Forwarded-For': ip });
+        await controller.createUser(req);
+      }
+
+      // 11th request should be rate limited
+      const req = createRequest('POST', 'http://localhost/create-user', {
+        name: 'Test',
+        email: 'test@example.com',
+        password: 'password123',
+      }, { 'X-Forwarded-For': ip });
+      const result = await controller.createUser(req);
+      await assertResult(result, {
+        onError: (err) => {
+          expect(err.code).toBe('RATE_LIMITED');
+          expect(err.status).toBe(429);
         },
       });
     });
