@@ -9,12 +9,13 @@ Current session state. Updated by agents between tasks to enable seamless handof
 - **Status:** idle
 - **Started:** —
 - **Last action:** Created task 009 — critical runtime bug in auth service (ReferenceError on login/user lookup)
-- **Last commit:** 505fced
+- **Last commit:** d49ed19
 
 ## What's Next
 
 - [x] **Task 009:** Fix auth.model.ts `db` reference bug + duplicate code cleanup ✅ done — all 15 tests pass
-- [ ] **Next → Task 004:** Document API contracts per service
+- [x] **Task 004:** Document API contracts per service ✅ done — docs/api-contracts.md created
+- [ ] **Next → Task 008:** Add rate limiting to Auth endpoints
 
 ## Pending Reviews
 

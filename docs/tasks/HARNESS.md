@@ -11,7 +11,6 @@ This file defines the active task set for the current project phase. Agents shou
 
 | ID | Title | Status | Dependencies |
 |----|-------|--------|--------------|
-| 004 | Document API contracts per service | not-started | none |
 | 008 | Add rate limiting to Auth endpoints | not-started | none |
 
 ## Completed Tasks
@@ -25,6 +24,7 @@ This file defines the active task set for the current project phase. Agents shou
 | 002 | Add health check endpoints to all services | 2026-06-25 | Added /health to Auth, User, Order; updated docker-compose |
 | 005 | Fix swagger UI in Auth service | 2026-06-25 | Replaced local swagger-ui-dist with CDN; removed dead route |
 | **009** | Fix auth.model.ts `db` reference bug and clean up duplicate code | **2026-06-29** | Fixed 3 `db.query` → `getDb().query` calls + removed duplicate block; all 15 tests pass.
+| **004** | Document API contracts per service | **2026-06-29** | Created `docs/api-contracts.md` covering all 3 services, cross-service contracts, auth flow.
 
 ## Deferred Tasks
 
@@ -40,11 +40,11 @@ This file defines the active task set for the current project phase. Agents shou
 
 | Field | Value |
 |-------|-------|
-| **Task ID** | 004 |
-| **Title** | Document API contracts per service |
+| **Task ID** | 008 |
+| **Title** | Add rate limiting to Auth endpoints |
 | **Set by** | agent |
 | **Set at** | 2026-06-29 |
-| **Notes** | 009 completed. Next pending task by ID order. Independent of others.
+| **Notes** | 004 completed. Next pending task by ID order.
 
 ## Dependency Rules
 

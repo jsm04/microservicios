@@ -4,11 +4,11 @@
 
 - **ID:** 004
 - **Title:** Document API contracts per service
-- **Status:** not-started
+- **Status:** completed
 - **Parent spec:** —
 - **Dependencies:** none
 - **Created:** 2026-06-25
-- **Completed:** —
+- **Completed:** 2026-06-29
 
 ## Scope
 
@@ -77,6 +77,7 @@
 | Date | Agent | Action | Notes |
 |------|-------|--------|-------|
 | 2026-06-25 | — | Created | Initial task breakdown |
+| 2026-06-29 | agent | Executed | Created `docs/api-contracts.md` with all 3 service APIs, cross-service contracts, and auth flow diagram. Data sourced directly from controller/index files and schemas.
 
 ## Lock Management
 
